@@ -82,7 +82,9 @@ class PenaltyMethod(MethodOfOptimization):
                        penalty=lambda step, size: ((step - 1) ** 0.7) * np.ones(size),                           # TODO 
                        exterior_penalty_function=lambda x: np.clip(x, a_min=0, a_max=np.inf) ** 2,
                        gamma=lambda x: np.abs(x),
-                       unconditional_method=GradientDescent(precision=5e-4, convergence_condition=Convergence.ByArgumentLastThree, h=0.01)):
+                       unconditional_method=GradientDescent(precision=5e-4, 
+                                                            convergence_condition=Convergence.ByArgumentLastThree, 
+                                                            h=0.01)):
         super().__init__(precision, convergence_condition)
         self.penalty = penalty
         self.exterior_penalty_function = exterior_penalty_function
@@ -92,7 +94,9 @@ class PenaltyMethod(MethodOfOptimization):
 
     def next_x(self, f, df, d2f, g, dg):
         return self.unconditional_method(
-                f=lambda x: f(x) + np.dot(self.penalty(len(self.x), self.x[-1].shape[0]), self.exterior_penalty_function(g(x))), 
+                f=lambda x: f(x) + np.dot(self.penalty(len(self.x), self.x[-1].shape[0]), 
+                                          self.exterior_penalty_function(g(x))), 
                 x0=self.x[-1], 
-                df=lambda x: df(x) + np.dot(self.penalty(len(self.x), self.x[-1].shape[0]), (2 * g(x) * dg(x)).clip(min=0)),    # TODO
+                df=lambda x: df(x) + np.dot(self.penalty(len(self.x), self.x[-1].shape[0]), 
+                                            (2 * g(x) * dg(x)).clip(min=0)),    # TODO
                 d2f=d2f)
