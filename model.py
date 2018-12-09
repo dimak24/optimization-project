@@ -71,5 +71,13 @@ class LogisticInstance:
         
         return self.a
 
+    def d2merchantability(self, x):
+        assert(isinstance(x, np.ndarray) and x.shape == self.a.shape)
+        
+        return np.zeros(x.shape[0])
+
     def dlog_expected_profit(self, x):
         return self.c / self.profit(x) + self.a * (1. - self.prob(x))
+
+    def d2log_expected_profit(self, x):
+        return -np.dot(self.c.T, self.c) / (self.profit(x) ** 2) - np.dot(self.a.T, self.a) * (self.prob(x) ** 2)

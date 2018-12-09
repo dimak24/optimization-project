@@ -100,3 +100,40 @@ class PenaltyMethod(MethodOfOptimization):
                 df=lambda x: df(x) + np.dot(self.penalty(len(self.x), self.x[-1].shape[0]), 
                                             (2 * g(x) * dg(x)).clip(min=0)),    # TODO
                 d2f=d2f)
+
+
+class NewtonMethod(MethodOfOptimization):
+    def __init__(self, precision=1e-5, convergence_condition=Convergence.ByArgument):
+        super().__init__(precision, convergence_condition)
+
+    def next_x(self, f, df, d2f, g, dg):
+        d2 = d2f(self.x[-1])
+        if isinstance(d2, (float, int)):
+            d2 = np.array([d2])
+        inv = la.inv(d2) if len(d2.shape) >= 2 else 1. / d2
+        return self.x[-1] - np.dot(inv, df(self.x[-1]))
+
+
+class QuasiNewtonMethod(MethodOfOptimization):
+    def __init__(self, precision=1e-5, convergence_condition=Convergence.ByArgument):
+        super().__init__(precision, convergence_condition)
+        self.H = []
+
+    def pre_call(self, f, x0, df, d2f, g, dg):
+        super().pre_call(f, x0, df, d2f, g, dg)
+        del self.H[:]
+        self.H.append(np.ones((x0.shape[0], x0.shape[0])))
+
+    def next_x(self, f, df, d2f, g, dg):
+        return self.x[-1] - (self.H[-1] @ df(self.x[-1]).T)
+
+
+class BroydenFletcherGoldfarbShannoMethod(QuasiNewtonMethod):
+    def __init__(self, precision=1e-5, convergence_condition=Convergence.ByArgument):
+        super().__init__(precision, convergence_condition)
+
+    def update(self, f, df, d2f, g, dg):
+        E = np.ones(self.H[-1].shape)
+        s = np.array([self.x[-1] - self.x[-2]])
+        y = np.array([df(self.x[-1]) - df(self.x[-2])])
+        self.H.append((E - (s.T @ y) / (y[0] @ s[0])) @ self.H[-1] @ (E - (y.T @ s) / (y[0] @ s[0])) + (s.T @ s) / (y[0] @ s[0]))
