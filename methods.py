@@ -1,7 +1,7 @@
 import numpy.linalg as la
 from enum import Enum
 import numpy as np
-
+from cvxopt import matrix, solvers
 
 
 class Convergence(Enum):
@@ -98,7 +98,7 @@ class PenaltyMethod(MethodOfOptimization):
                                           self.exterior_penalty_function(g(x))), 
                 x0=self.x[-1], 
                 df=lambda x: df(x) + np.dot(self.penalty(len(self.x), self.x[-1].shape[0]), 
-                                            (2 * g(x) * dg(x)).clip(min=0)),    # TODO
+                                            (2 * g(x) @ dg(x)).clip(min=0)),
                 d2f=d2f)
 
 
@@ -137,3 +137,26 @@ class BroydenFletcherGoldfarbShannoMethod(QuasiNewtonMethod):
         s = np.array([self.x[-1] - self.x[-2]])
         y = np.array([df(self.x[-1]) - df(self.x[-2])])
         self.H.append((E - (s.T @ y) / (y[0] @ s[0])) @ self.H[-1] @ (E - (y.T @ s) / (y[0] @ s[0])) + (s.T @ s) / (y[0] @ s[0]))
+
+
+class ConditionalGradientMethod(MethodOfOptimization):
+    def __init__(self, precision=1e-5, convergence_condition=Convergence.ByValue,
+                       k=lambda step: 2. / (step + 3.)):
+        super().__init__(precision, convergence_condition)
+        self.k = k if callable(k) else lambda step: k
+    
+
+    def next_x(self, f, df, d2f, g, dg):
+        c = matrix(df(self.x[-1]))
+        b = matrix(-g(np.zeros(self.x[-1].shape[0])))
+
+        def basis(i):
+            tmp = np.zeros(self.x[-1].shape[0])
+            tmp[i] = 1.
+            return tmp
+
+        A = matrix([matrix(g(basis(i)) + b.T) for i in range(self.x[-1].shape[0])]).T
+
+        s = np.array(solvers.lp(c, A, b, options={'show_progress' : False})['x']).T[0]
+
+        return self.x[-1] + self.k(len(self.x)) * (s - self.x[-1])
