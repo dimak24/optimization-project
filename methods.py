@@ -39,7 +39,10 @@ class MethodOfOptimization:
         self.pre_call(f, x0, df, d2f, g, dg)
 
         while len(self.x) < 4 or not self.convergence_condition(f, df, d2f):
-            self.x.append(self.next_x(f, df, d2f, g, dg))
+            x = self.next_x(f, df, d2f, g, dg)
+            if any(np.isnan(x)) or any(np.isinf(x)) or np.isnan(f(x)) or np.isinf(f(x)):
+                return  self.x[-1]
+            self.x.append(x)
             self.update(f, df, d2f, g, dg)
 
         return self.x[-1]
@@ -79,7 +82,7 @@ class AcceleratedNesterovGradientDescent(MethodOfOptimization):
 
 class PenaltyMethod(MethodOfOptimization):
     def __init__(self, precision=1e-5, convergence_condition=Convergence.ByArgument, 
-                       penalty=lambda step, size: ((step - 1) ** 0.7) * np.ones(size),                           # TODO 
+                       penalty=lambda step, size: ((step - 1) ** 0.7) * np.ones(size),
                        exterior_penalty_function=lambda x: np.clip(x, a_min=0, a_max=np.inf) ** 2,
                        gamma=lambda x: np.abs(x),
                        unconditional_method=GradientDescent(precision=5e-4, 
@@ -111,6 +114,7 @@ class NewtonMethod(MethodOfOptimization):
         if isinstance(d2, (float, int)):
             d2 = np.array([d2])
         inv = la.inv(d2) if len(d2.shape) >= 2 else 1. / d2
+        print(inv, self.x[-1])
         return self.x[-1] - np.dot(inv, df(self.x[-1]))
 
 

@@ -23,26 +23,12 @@ class LogisticInstance:
     #-------------------------------------------------------------------------------#
     
     def __init__(self, a, b, c, d, F, g):
-        assert(isinstance(b, (float, int)) and 
-               isinstance(d, (float, int)) and 
-               isinstance(a, (np.ndarray, list)) and
-               isinstance(c, (np.ndarray, list)) and
-               isinstance(F, (np.ndarray, list)) and
-               isinstance(g, (np.ndarray, list)))
-
         self.a = np.array(a)
         self.b = b
         self.c = np.array(c)
         self.d = d
         self.F = F
         self.g = g
-
-        assert(self.a.shape == self.c.shape and
-               len(self.a.shape) == 1 and
-               len(self.g.shape) == 1 and
-               len(self.F.shape) == 2 and
-               self.g.shape[0] == self.F.shape[0] and
-               self.F.shape[1] == self.a.shape[0])
 
 
     def merchantability(self, x):
@@ -80,4 +66,6 @@ class LogisticInstance:
         return self.c / self.profit(x) + self.a * (1. - self.prob(x))
 
     def d2log_expected_profit(self, x):
-        return -np.dot(self.c.T, self.c) / (self.profit(x) ** 2) - np.dot(self.a.T, self.a) * (self.prob(x) ** 2)
+        c = np.array([self.c])
+        a = np.array([self.a])
+        return (c.T @ c) / (self.profit(x) ** 2) - (a.T @ a) * (self.prob(x) ** 2)
