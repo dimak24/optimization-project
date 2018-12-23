@@ -68,4 +68,4 @@ class LogisticInstance:
     def d2log_expected_profit(self, x):
         c = np.array([self.c])
         a = np.array([self.a])
-        return (c.T @ c) / (self.profit(x) ** 2) - (a.T @ a) * (self.prob(x) ** 2)
+        return -(c.T @ c) / (self.profit(x) ** 2) - (a.T @ a) * self.prob(x) / (1. + np.exp(self.merchantability(x)))

@@ -112,23 +112,19 @@ class NewtonMethod(MethodOfOptimization):
     def next_x(self, f, df, d2f, g, dg):
         d2 = d2f(self.x[-1])
         if isinstance(d2, (float, int)):
-            d2 = np.array([d2])
-        inv = la.inv(d2) if len(d2.shape) >= 2 else 1. / d2
-        return self.x[-1] - np.dot(inv, df(self.x[-1]))
+            d2 = np.array([[d2]])
+        return self.x[-1] - la.inv(d2) @ df(self.x[-1]).T
 
 
 class QuasiNewtonMethod(MethodOfOptimization):
     def __init__(self, precision=1e-9, convergence_condition=Convergence.ByArgument):
         super().__init__(precision, convergence_condition)
         self.H = []
-        self.invH = []
 
     def pre_call(self, f, x0, df, d2f, g, dg):
         super().pre_call(f, x0, df, d2f, g, dg)
         del self.H[:]
-        del self.invH[:]
         self.H.append(np.ones((x0.shape[0], x0.shape[0])))
-        self.invH.append(np.ones((x0.shape[0], x0.shape[0])))
 
     def next_x(self, f, df, d2f, g, dg):
         return self.x[-1] - (self.H[-1] @ df(self.x[-1]).T)
